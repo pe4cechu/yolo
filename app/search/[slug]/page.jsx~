@@ -1,0 +1,46 @@
+"use client";
+import React from "react";
+import { useProductContext } from "../../context/ProductContext";
+import Product from "../../components/Product";
+
+// Function to remove Vietnamese diacritics
+const removeVietnameseDiacritics = (str) => {
+  return str
+      .normalize("NFD") // Decompose diacritics
+      .replace(/[\u0300-\u036f]/g, "") // Remove diacritic marks
+      .replace(/đ/g, "d") // Replace đ with d
+      .replace(/Đ/g, "D"); // Replace Đ with D
+};
+
+const SearchPage = ({ params }) => {
+  const { slug } = React.use(params);; // Extract slug from params
+  const decodedSlug = slug ? decodeURIComponent(slug) : ""; // Decode the slug
+  const { products } = useProductContext();
+
+  // Handle empty or invalid slug
+  if (!decodedSlug) {
+    return <div>No search term provided</div>;
+  }
+
+  // Filter products with diacritic-insensitive search on title and overview
+  const items = products.filter((p) => {
+    const normalizedTitle = removeVietnameseDiacritics(p.title.toLowerCase());
+    const normalizedOverview = p.overview
+        ? removeVietnameseDiacritics(p.overview.toLowerCase())
+        : ""; // Fallback to empty string if overview is undefined
+    const normalizedSlug = removeVietnameseDiacritics(decodedSlug.toLowerCase());
+
+    return (
+        normalizedTitle.includes(normalizedSlug) ||
+        normalizedOverview.includes(normalizedSlug)
+    );
+  });
+
+  return (
+      <div>
+        <Product items={items} />
+      </div>
+  );
+};
+
+export default SearchPage;
